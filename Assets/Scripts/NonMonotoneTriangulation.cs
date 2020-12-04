@@ -7,8 +7,13 @@ public static class NonMonotoneTriangulation
 	static List<Vector3> Points = new List<Vector3>();
 	static List<Vector3> sortedList = new List<Vector3>();
 	static List<List<Vector3>> monotones = new List<List<Vector3>>();
+	static List<List<int>> monotonesIndex = new List<List<int>>();
 	static List<Vector3> triangles = new List<Vector3>();
 	static List<Vector2Int> EdgeAndHelperIndex = new List<Vector2Int>();
+	static List<Vector2Int> DiagonalIndex = new List<Vector2Int>();
+	static int MaxIndex;
+	static int MinIndex;
+	static bool LeftChain;
 	public static List<List<Vector3>> Monotone(List<Vector3> points)
 	{
 		Points = points;
@@ -29,6 +34,11 @@ public static class NonMonotoneTriangulation
 	public static void MakeMonotone()
 	{
 		sortedList = Points.OrderBy(v => v.y).ToList();
+		MaxIndex = Points.IndexOf(sortedList.Last());
+		MinIndex = Points.IndexOf(sortedList.First());
+		int MostLeftPointIndex = Points.IndexOf(Points.OrderBy(v => v.x).First());
+		LeftChain = ((MinIndex < MostLeftPointIndex && MostLeftPointIndex < MaxIndex) || (MaxIndex < MostLeftPointIndex && MostLeftPointIndex < MinIndex));
+
 		for (int i = 0; i < sortedList.Count; i++)
 		{
 			int TargetIndex = Points.IndexOf(sortedList[i]);
@@ -39,32 +49,17 @@ public static class NonMonotoneTriangulation
 			VertexType t = GetVertexType(a, o, b);
 			switch (t)
 			{
-				case VertexType.StartVertex:
-					HandleStartVertex(TargetIndex);
-					break;
-				case VertexType.SplitVertex:
-					HandleSplitVertex(TargetIndex);
-					break;
-				case VertexType.MergeVertex:
-					HandleMergeVertex(TargetIndex);
-					break;
-				case VertexType.RegularVertex:
-					HandleRegularVertex(TargetIndex);
-					break;
-				case VertexType.EndVertex:
-					HandleEndVertex(TargetIndex);
-					break;
+				case VertexType.StartVertex: HandleStartVertex(TargetIndex); break;
+				case VertexType.SplitVertex: HandleSplitVertex(TargetIndex); break;
+				case VertexType.MergeVertex: HandleMergeVertex(TargetIndex); break;
+				case VertexType.RegularVertex: HandleRegularVertex(TargetIndex); break;
+				case VertexType.EndVertex: HandleEndVertex(TargetIndex); break;
 			}
 		}
 	}
 	public static Vector3 GetListElementWithLoop(List<Vector3> l, int ind)
 	{
-		if (-1 < ind && ind < l.Count)
-			return l[ind];
-		else if (l.Count <= ind)
-			return l[ind - l.Count];
-		else
-			return l[l.Count + ind];
+		return l[0 < ind ? ind % l.Count : ind % l.Count + l.Count];
 	}
 	static void HandleStartVertex(int index)
 	{
@@ -77,31 +72,43 @@ public static class NonMonotoneTriangulation
 	static void HandleMergeVertex(int index)
 	{
 		Vector2Int v = GetHelperIndex(index - 1);
-		Vector3 o = Points[v.y];
-		Vector3 a = GetListElementWithLoop(Points, v.y - 1);
-		Vector3 b = GetListElementWithLoop(Points, v.y + 1);
+		if (GetHelperVertexType(index - 1) == VertexType.MergeVertex)
+			AddDiagonal(index, v.y);
+		EdgeAndHelperIndex.Remove(v);
 
-		if (GetVertexType(a, o, b) == VertexType.MergeVertex)
-			AddDiagonal();
 	}
 	static void HandleRegularVertex(int index)
 	{
+		if (IsVertexOnLeftChain(Points[index]))
+		{
 
+		}
+		else
+		{
+
+		}
 	}
 	static void HandleEndVertex(int index)
 	{
 		Vector2Int v = GetHelperIndex(index - 1);
-		Vector3 o = Points[v.y];
-		Vector3 a = GetListElementWithLoop(Points, v.y - 1);
-		Vector3 b = GetListElementWithLoop(Points, v.y + 1);
-
-		if (GetVertexType(a, o, b) == VertexType.MergeVertex)
-			AddDiagonal();
+		if (GetHelperVertexType(index - 1) == VertexType.MergeVertex)
+			AddDiagonal(index, v.y);
 		EdgeAndHelperIndex.Remove(v);
-	}
-	static void AddDiagonal()
-	{
 
+	}
+	static void DrawDiagonal()
+	{
+		List<Vector2Int> temp = new List<Vector2Int>();
+		foreach (Vector2Int v in DiagonalIndex)
+		{
+			temp.Add(v);
+			temp.Add(new Vector2Int(v.y, v.x));
+		}
+
+	}
+	static void AddDiagonal(int index0, int index1)
+	{
+		DiagonalIndex.Add(new Vector2Int(index0, index1));
 	}
 	static void AddEdge(int index, int helperIndex)
 	{
@@ -152,6 +159,11 @@ public static class NonMonotoneTriangulation
 				return VertexType.MergeVertex;
 		else
 			return VertexType.RegularVertex;
+	}
+	static bool IsVertexOnLeftChain(Vector3 p)
+	{
+		int t = Points.IndexOf(p);
+		return LeftChain && ((MinIndex < t && t < MaxIndex) || (MaxIndex < t && t < MinIndex));
 	}
 }
 public enum VertexType
