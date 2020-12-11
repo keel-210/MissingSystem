@@ -15,12 +15,9 @@ public class DelaunayTriangulationTestEditor : Editor
 			checker.Triangulation();
 			SceneView.RepaintAll();
 		}
-		if (GUILayout.Button("Deformation Triangulation"))
-		{
-			checker.DeformationTriangulation();
-			SceneView.RepaintAll();
-		}
 		if (GUILayout.Button("Replace Points"))
 			checker.ReplacePoints();
+		if (GUILayout.Button("Rect Points"))
+			checker.RectPoints();
 	}
 }

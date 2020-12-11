@@ -11,18 +11,18 @@ public class DelaunayTriangulationTest : MonoBehaviour
 		for (int i = 0; i < PointsCount; i++)
 			points.Add(new Vector3((Random.value - 0.5f) * 2, (Random.value - 0.5f) * 2, 0));
 	}
+	public void RectPoints()
+	{
+		points = new List<Vector3>();
+		for (int i = 0; i < PointsCount; i++)
+			for (int j = 0; j < PointsCount; j++)
+				points.Add(new Vector3((i - PointsCount / 2) * (2f / PointsCount), (j - PointsCount / 2) * (2f / PointsCount), 0));
+	}
 	public void Triangulation()
 	{
 		triangles.Clear();
 		if (points.Count >= 3)
 			triangles = DelaunayTriangulation.Triangulate(points);
-		Debug.Log(triangles.Count);
-	}
-	public void DeformationTriangulation()
-	{
-		triangles.Clear();
-		if (points.Count >= 3)
-			triangles = DeformationDelaunayTriangulation.Triangulate(points);
 		Debug.Log(triangles.Count);
 	}
 	void OnDrawGizmos()

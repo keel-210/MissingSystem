@@ -88,7 +88,6 @@ public static class DelaunayTriangulation
 
 					GraphNode<Vector3Int> ijlNode = k != NonContainValue(t[0].Value, i, j) ? t[0] : t[1];
 					int l = NonContainValue(ijlNode.Value, i, j);
-					Debug.Log("Four r&i&j&k&l " + r + " " + i + " " + j + " " + k + " " + l);
 
 					//ここに新頂点rによる分割処理を入れる
 					//三角形探索に使用しているのはEdgeAndTriangleなので三角形そのものを追加する必要はない
@@ -99,7 +98,6 @@ public static class DelaunayTriangulation
 					var ilr = new GraphNode<Vector3Int>(VecIntUtil.Sorted(new Vector3Int(i, l, r)));
 					var jlr = new GraphNode<Vector3Int>(VecIntUtil.Sorted(new Vector3Int(j, l, r)));
 
-					Debug.Log("" + ilr.Value + "" + jlr.Value);
 					AddEdgeAndTriangleIndex(i, r, kir);
 					AddEdgeAndTriangleIndex(i, r, ilr);
 					AddEdgeAndTriangleIndex(j, r, jkr);
@@ -133,8 +131,6 @@ public static class DelaunayTriangulation
 				}
 				else
 				{
-					Debug.Log("BET r&i&j$k " + r + " " + i + " " + j + " " + k);
-
 					AddEdgeAndTriangleIndex(i, r, kir);
 					AddEdgeAndTriangleIndex(j, r, jkr);
 					AddEdgeAndTriangleIndex(k, r, jkr);
@@ -174,6 +170,7 @@ public static class DelaunayTriangulation
 	static void PrepareBigEnoughTriangle(List<Vector3> points)
 	{
 		//"十分に大きい三角形"はすべての点の中の最大値*2を辺とする正方形をピッタリ覆う三角形を定義すればよい
+		//ピッタリの大きさだと最大値を持つ点をギリギリ内包しないことがある
 		float AbsMaxValue = 0;
 		foreach (Vector3 v in points)
 		{
@@ -181,9 +178,9 @@ public static class DelaunayTriangulation
 			AbsMaxValue = AbsMaxValue < Mathf.Abs(v.y) ? Mathf.Abs(v.y) : AbsMaxValue;
 			AbsMaxValue = AbsMaxValue < Mathf.Abs(v.z) ? Mathf.Abs(v.z) : AbsMaxValue;
 		}
-		Vector3 p0 = new Vector3(3 * AbsMaxValue, 0, 0);
-		Vector3 p1 = new Vector3(0, 3 * AbsMaxValue, 0);
-		Vector3 p2 = new Vector3(-3 * AbsMaxValue, -3 * AbsMaxValue, 0);
+		Vector3 p0 = new Vector3(3.1f * AbsMaxValue, 0, 0);
+		Vector3 p1 = new Vector3(0, 3.1f * AbsMaxValue, 0);
+		Vector3 p2 = new Vector3(-3.1f * AbsMaxValue, -3.1f * AbsMaxValue, 0);
 		Points.Add(p0);
 		Points.Add(p1);
 		Points.Add(p2);
@@ -311,7 +308,7 @@ public static class DelaunayTriangulation
 		}
 		Vector3 ij = (Points[i] - Points[j]).normalized, jk = (Points[k] - Points[j]).normalized;
 		Vector3 ir = (Points[i] - Points[r]).normalized, rk = (Points[k] - Points[r]).normalized;
-		return ((Vector3.Dot(ij, jk)) < (Vector3.Dot(ir, rk))) && (Vector3.Dot(ir, rk) != 1);
+		return ((Vector3.Dot(ij, jk)) < (Vector3.Dot(ir, rk)));
 	}
 	static bool IsPointInTriangle(Vector3 p, Vector3 t0, Vector3 t1, Vector3 t2)
 	{
