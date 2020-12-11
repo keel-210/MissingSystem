@@ -11,6 +11,7 @@ public static class DelaunayTriangulation
 	static Dictionary<Vector2Int, List<GraphNode<Vector3Int>>> EdgeAndTrianglesIndex = new Dictionary<Vector2Int, List<GraphNode<Vector3Int>>>();
 	static Graph<Vector3Int> DelaunayGraph = new Graph<Vector3Int>();
 	static GraphNode<Vector3Int> BigEnoughTriangle = new GraphNode<Vector3Int>();
+	static HashSet<GraphNode<Vector3Int>> aliveNodes = new HashSet<GraphNode<Vector3Int>>();
 	public static List<Vector3> Triangulate(List<Vector3> points)
 	{
 		Initialize();
@@ -34,6 +35,10 @@ public static class DelaunayTriangulation
 				DelaunayGraph.AddDirectedEdge(includeTriangleGraph, ijr);
 				DelaunayGraph.AddDirectedEdge(includeTriangleGraph, jkr);
 				DelaunayGraph.AddDirectedEdge(includeTriangleGraph, kir);
+				aliveNodes.Remove(includeTriangleGraph);
+				aliveNodes.Add(ijr);
+				aliveNodes.Add(jkr);
+				aliveNodes.Add(kir);
 				AddEdgeAndTriangleIndex(i, r, ijr);
 				AddEdgeAndTriangleIndex(i, r, kir);
 				AddEdgeAndTriangleIndex(j, r, jkr);
@@ -109,10 +114,17 @@ public static class DelaunayTriangulation
 					ChangeEdgeAndTriangleIndex(j, k, jkr, includeTriangle);
 					ChangeEdgeAndTriangleIndex(k, i, kir, includeTriangle);
 
-					DelaunayGraph.AddDirectedEdge(ijlNode, new GraphNode<Vector3Int>(VecIntUtil.Sorted(new Vector3Int(i, j, r))));
-					DelaunayGraph.AddDirectedEdge(ijlNode, new GraphNode<Vector3Int>(VecIntUtil.Sorted(new Vector3Int(j, l, r))));
-					DelaunayGraph.AddDirectedEdge(includeTriangleGraph, new GraphNode<Vector3Int>(VecIntUtil.Sorted(new Vector3Int(j, k, r))));
-					DelaunayGraph.AddDirectedEdge(includeTriangleGraph, new GraphNode<Vector3Int>(VecIntUtil.Sorted(new Vector3Int(k, i, r))));
+					DelaunayGraph.AddDirectedEdge(ijlNode, ilr);
+					DelaunayGraph.AddDirectedEdge(ijlNode, jlr);
+					DelaunayGraph.AddDirectedEdge(includeTriangleGraph, jkr);
+					DelaunayGraph.AddDirectedEdge(includeTriangleGraph, kir);
+
+					aliveNodes.Remove(includeTriangleGraph);
+					aliveNodes.Remove(ijlNode);
+					aliveNodes.Add(ilr);
+					aliveNodes.Add(jlr);
+					aliveNodes.Add(jkr);
+					aliveNodes.Add(kir);
 
 					LegalizeEdge(r, i, l);
 					LegalizeEdge(r, l, j);
@@ -131,8 +143,12 @@ public static class DelaunayTriangulation
 					ChangeEdgeAndTriangleIndex(j, k, jkr, includeTriangle);
 					ChangeEdgeAndTriangleIndex(k, i, kir, includeTriangle);
 
-					DelaunayGraph.AddDirectedEdge(includeTriangleGraph, new GraphNode<Vector3Int>(VecIntUtil.Sorted(new Vector3Int(j, k, r))));
-					DelaunayGraph.AddDirectedEdge(includeTriangleGraph, new GraphNode<Vector3Int>(VecIntUtil.Sorted(new Vector3Int(k, i, r))));
+					DelaunayGraph.AddDirectedEdge(includeTriangleGraph, jkr);
+					DelaunayGraph.AddDirectedEdge(includeTriangleGraph, kir);
+
+					aliveNodes.Remove(includeTriangleGraph);
+					aliveNodes.Add(jkr);
+					aliveNodes.Add(kir);
 
 					LegalizeEdge(r, j, k);
 					LegalizeEdge(r, k, i);
@@ -153,6 +169,7 @@ public static class DelaunayTriangulation
 		Points = new List<Vector3>();
 		EdgeAndTrianglesIndex = new Dictionary<Vector2Int, List<GraphNode<Vector3Int>>>();
 		DelaunayGraph = new Graph<Vector3Int>();
+		aliveNodes = new HashSet<GraphNode<Vector3Int>>();
 	}
 	static void PrepareBigEnoughTriangle(List<Vector3> points)
 	{
@@ -171,8 +188,9 @@ public static class DelaunayTriangulation
 		Points.Add(p1);
 		Points.Add(p2);
 		Points.AddRange(points);
-		DelaunayGraph.AddNode(new Vector3Int(0, 1, 2));
 		GraphNode<Vector3Int> bet = new GraphNode<Vector3Int>(new Vector3Int(0, 1, 2));
+		DelaunayGraph.AddNode(bet);
+		aliveNodes.Add(bet);
 		AddEdgeAndTriangleIndex(0, 1, bet);
 		AddEdgeAndTriangleIndex(1, 2, bet);
 		AddEdgeAndTriangleIndex(2, 0, bet);
@@ -253,7 +271,6 @@ public static class DelaunayTriangulation
 	{
 		//ゴチャゴチャしてきたな
 		//辺ijを消して辺krにフリップする
-		Debug.Log("Flip! " + i + " " + j + " " + r + " " + k);
 		var ikr = new GraphNode<Vector3Int>(VecIntUtil.Sorted(new Vector3Int(i, k, r)));
 		var jkr = new GraphNode<Vector3Int>(VecIntUtil.Sorted(new Vector3Int(j, k, r)));
 		var nowEdge = VecIntUtil.Sorted(new Vector2Int(i, j));
@@ -264,6 +281,10 @@ public static class DelaunayTriangulation
 		DelaunayGraph.AddDirectedEdge(EdgeAndTrianglesIndex[nowEdge][0], jkr);
 		DelaunayGraph.AddDirectedEdge(EdgeAndTrianglesIndex[nowEdge][1], ikr);
 		DelaunayGraph.AddDirectedEdge(EdgeAndTrianglesIndex[nowEdge][1], jkr);
+		aliveNodes.Remove(EdgeAndTrianglesIndex[nowEdge][0]);
+		aliveNodes.Remove(EdgeAndTrianglesIndex[nowEdge][1]);
+		aliveNodes.Add(ikr);
+		aliveNodes.Add(jkr);
 		Vector3Int ijk = VecIntUtil.Sorted(new Vector3Int(i, j, k)), ijr = VecIntUtil.Sorted(new Vector3Int(i, j, r));
 		ChangeEdgeAndTriangleIndex(i, k, ikr, ijk);
 		ChangeEdgeAndTriangleIndex(i, r, ikr, ijr);
@@ -290,7 +311,7 @@ public static class DelaunayTriangulation
 		}
 		Vector3 ij = (Points[i] - Points[j]).normalized, jk = (Points[k] - Points[j]).normalized;
 		Vector3 ir = (Points[i] - Points[r]).normalized, rk = (Points[k] - Points[r]).normalized;
-		return (Vector3.Dot(ij, jk)) < (Vector3.Dot(ir, rk));
+		return ((Vector3.Dot(ij, jk)) < (Vector3.Dot(ir, rk))) && (Vector3.Dot(ir, rk) != 1);
 	}
 	static bool IsPointInTriangle(Vector3 p, Vector3 t0, Vector3 t1, Vector3 t2)
 	{
@@ -306,9 +327,9 @@ public static class DelaunayTriangulation
 	}
 	static void MakeTriangles(GraphNode<Vector3Int> g)
 	{
-		foreach (GraphNode<Vector3Int> v in DelaunayGraph.allNode)
+		foreach (var v in aliveNodes)
 		{
-			if (v.Neighbors.Count == 0 /*&& !VecIntUtil.Contain012(v.Value)*/)
+			if (v.Neighbors.Count == 0 && !VecIntUtil.Contain012(v.Value))
 			{
 				triangles.Add(Points[v.Value.x]);
 				triangles.Add(Points[v.Value.y]);

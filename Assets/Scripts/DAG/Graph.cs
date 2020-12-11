@@ -3,8 +3,6 @@ using System.Collections.Generic;
 public class Graph<T> : IEnumerable<T>
 {
 	private NodeList<T> nodeSet;
-	public NodeList<T> allNode = new NodeList<T>();
-
 	public Graph() : this(null) { }
 	public Graph(NodeList<T> nodeSet)
 	{
@@ -16,7 +14,6 @@ public class Graph<T> : IEnumerable<T>
 	public void AddNode(GraphNode<T> node)
 	{
 		nodeSet.Add(node);
-		allNode.Add(node);
 	}
 	public void AddNode(T value)
 	{
@@ -25,8 +22,6 @@ public class Graph<T> : IEnumerable<T>
 	public void AddDirectedEdge(GraphNode<T> from, GraphNode<T> to)
 	{
 		from.Neighbors.Add(to);
-		if (!allNode.Contains(to))
-			allNode.Add(to);
 	}
 	public bool Contains(T value)
 	{
@@ -51,7 +46,7 @@ public class Graph<T> : IEnumerable<T>
 	}
 	public IEnumerator<T> GetEnumerator()
 	{
-		return (IEnumerator<T>)allNode.GetEnumerator();
+		return (IEnumerator<T>)nodeSet.GetEnumerator();
 	}
 	IEnumerator IEnumerable.GetEnumerator() { return GetEnumerator(); }
 	public NodeList<T> NodeList

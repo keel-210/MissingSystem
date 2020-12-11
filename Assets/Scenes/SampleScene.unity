@@ -224,14 +224,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 608d106071f165941a28d3adf7f89a6e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  PointsCount: 10
+  PointsCount: 6
   points:
   - {x: 0, y: 1, z: 0}
-  - {x: 0, y: -1, z: 0}
+  - {x: -1, y: 0, z: 0}
   - {x: -0.5, y: 0, z: 0}
-  - {x: -0.25, y: 0, z: 0}
-  - {x: 0.25, y: 0, z: 0}
   - {x: 0.5, y: 0, z: 0}
+  - {x: 1, y: 0, z: 0}
+  - {x: 0, y: -1, z: 0}
 --- !u!1 &363738359
 GameObject:
   m_ObjectHideFlags: 0
