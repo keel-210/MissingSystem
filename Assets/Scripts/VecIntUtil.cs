@@ -2,52 +2,56 @@ using UnityEngine;
 
 public static class VecIntUtil
 {
-	public static Vector3Int Sorted(Vector3Int v)
+	static int temp;
+	public static void Swap<T>(ref T i, ref T j)
 	{
-		//バブルソートの理屈
-		int temp;
-		if (v.y < v.x)
+		T t = j;
+		j = i;
+		i = t;
+	}
+	public static int[] Sorted(int[] v)
+	{
+		if (v.Length == 3)
 		{
-			temp = v.y;
-			v.y = v.x;
-			v.x = temp;
+			//バブルソートの理屈
+			if (v[1] < v[0])
+				Swap(ref v[0], ref v[1]);
+			if (v[2] < v[1])
+				Swap(ref v[1], ref v[2]);
+			if (v[1] < v[0])
+				Swap(ref v[0], ref v[1]);
 		}
-		if (v.z < v.y)
-		{
-			temp = v.z;
-			v.z = v.y;
-			v.y = temp;
-		}
-		if (v.y < v.x)
-		{
-			temp = v.y;
-			v.y = v.x;
-			v.x = temp;
-		}
+		else
+			if (v[1] < v[0])
+			Swap(ref v[0], ref v[1]);
 		return v;
 	}
-	public static Vector2Int Sorted(Vector2Int v)
+	public static (int, int) SortedPoint(int i, int j)
 	{
-		//バブルソートの理屈
-		int temp;
-		if (v.y < v.x)
-		{
-			temp = v.y;
-			v.y = v.x;
-			v.x = temp;
-		}
-		return v;
+		if (j < i)
+			Swap(ref i, ref j);
+		return (i, j);
 	}
-	public static bool Contain012(Vector3Int v)
+	public static (int, int, int) SortedPoint(int i, int j, int k)
 	{
-		return Is012(v.x) || Is012(v.y) || Is012(v.z);
+		if (j < i)
+			Swap(ref i, ref j);
+		if (k < j)
+			Swap(ref j, ref k);
+		if (j < i)
+			Swap(ref i, ref j);
+		return (i, j, k);
 	}
-	public static bool Contain012(Vector2Int v)
+	public static bool Contain012((int, int, int) v)
 	{
-		return Is012(v.x) || Is012(v.y);
+		return Is012(v.Item1) || Is012(v.Item2) || Is012(v.Item3);
 	}
 	static bool Is012(int i)
 	{
 		return (i == 0 || i == 1 || i == 2);
+	}
+	public static int NonContainValue((int, int, int) v, int i, int j)
+	{
+		return (v.Item1 != i && v.Item1 != j) ? v.Item1 : (v.Item2 != i && v.Item2 != j) ? v.Item2 : v.Item3;
 	}
 }
