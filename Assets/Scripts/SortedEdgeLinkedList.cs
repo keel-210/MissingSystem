@@ -8,7 +8,8 @@ public static class SortedEdgeLinkedList
 	static List<Chains> chains = new List<Chains>();
 	public static List<Vector3> MakeLinkedList(List<Vector3> points)
 	{
-		//辺を保存 ついでに小さい方を揃える
+		Initialize();
+		//辺を保存 ついでに辺の流れを統一する
 		for (int i = 0; i < points.Count - 1; i += 2)
 		{
 			if (points[i].y < points[i + 1].y)
@@ -16,9 +17,11 @@ public static class SortedEdgeLinkedList
 			else
 				Edges.Add(new List<Vector3> { points[i + 1], points[i] });
 		}
-		//yでソート ここでO(nlogn)
-		Edges = Edges.OrderBy(x => x[0].y).ToList();
-		//チェーンを構築する ここ以降の処理は全てチェーン数に依存することになる多分最悪n/4個チェーンが構築される
+		//xでソートした後yでソート ここでO(nlogn)
+		Edges = Edges.OrderBy(x => x[0].x).OrderBy(x => x[0].y).ToList();
+		//チェーンを構築する ここ以降の処理は全てチェーン数に依存することになる
+		//凸があるとチェーンが一つ増える 多分最悪n/4個チェーンが構築される
+		//x->yのソートで次の頂点が必ず同じ頂点が並ぶはず
 		chains.Add(new Chains(Edges[0][0], Edges[0][1], Edges[1][1]));
 		for (int i = 2; i < Edges.Count; i++)
 		{
@@ -29,23 +32,15 @@ public static class SortedEdgeLinkedList
 			if (!NewChainFlg)
 				chains.Add(new Chains(Edges[i][0], Edges[i][1], Edges[i + 1][1]));
 		}
-		//最後にチェーンから連結辺リストを作る ここ最悪計算量O(n^2)サイテー
+		//最後にチェーンから連結辺リストを作る 計算量O(nlogn)
+		chains = chains.OrderBy(x => x.leftChain[0].x).ToList();
 		LinkedList.AddRange(chains[0].GetChain(true));
 		for (int i = 1; i < chains.Count; i++)
 		{
-			for (int j = 0; j < chains.Count; j++)
-			{
-				if (!chains[j].IsChecked && ProximityCheck(LinkedList.Last(), chains[j].LeftChainLast()))
-				{
-					LinkedList.AddRange(chains[j].GetChain(true));
-					break;
-				}
-				else if (!chains[j].IsChecked && ProximityCheck(LinkedList.Last(), chains[j].RightChainLast()))
-				{
-					LinkedList.AddRange(chains[j].GetChain(false));
-					break;
-				}
-			}
+			if (ProximityCheck(LinkedList.Last(), chains[i].LeftChainLast()))
+				LinkedList.AddRange(chains[i].GetChain(true));
+			else if (ProximityCheck(LinkedList.First(), chains[i].LeftChainLast()))
+				LinkedList.InsertRange(0, chains[i].GetChain(true));
 		}
 		return LinkedList;
 	}
@@ -104,19 +99,6 @@ public static class SortedEdgeLinkedList
 				l.AddRange(leftChain.GetRange(1, leftChain.Count - 1));
 			}
 			return l;
-		}
-		public List<Vector3> ReverseListWithoutIndexZero(bool IsLeft)
-		{
-			if (IsLeft)
-			{
-				leftChain.Reverse(1, leftChain.Count - 1);
-				return leftChain.GetRange(1, leftChain.Count - 1);
-			}
-			else
-			{
-				rightChain.Reverse(1, rightChain.Count - 1);
-				return rightChain.GetRange(1, rightChain.Count - 1);
-			}
 		}
 	}
 }
