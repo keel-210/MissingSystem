@@ -17,7 +17,7 @@ public class DGrahamTest : MonoBehaviour
 				cutPoint.Add(points[0]);
 		}
 		triangles.Clear();
-		triangles = DeformationGraham.MakeSingleConnectedEdgeList(cutPoint);
+		triangles = AngleSortMethod.MakeSingleConnectedEdgeList(cutPoint);
 	}
 	void OnDrawGizmos()
 	{

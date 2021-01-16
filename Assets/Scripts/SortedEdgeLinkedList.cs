@@ -21,7 +21,7 @@ public static class SortedEdgeLinkedList
 		Edges = Edges.OrderBy(x => x[0].x).OrderBy(x => x[0].y).ToList();
 		//チェーンを構築する ここ以降の処理は全てチェーン数に依存することになる
 		//凸があるとチェーンが一つ増える 多分最悪n/4個チェーンが構築される
-		//x->yのソートで次の頂点が必ず同じ頂点が並ぶはず
+		//x->yの安定ソートで次の頂点に必ず同じ頂点が並ぶはず
 		chains.Add(new Chains(Edges[0][0], Edges[0][1], Edges[1][1]));
 		for (int i = 2; i < Edges.Count; i++)
 		{
@@ -30,7 +30,10 @@ public static class SortedEdgeLinkedList
 				if (NewChainFlg = NewChainFlg | chains[j].Add(Edges[i][0], Edges[i][1]))
 					break;
 			if (!NewChainFlg)
+			{
 				chains.Add(new Chains(Edges[i][0], Edges[i][1], Edges[i + 1][1]));
+				i++;
+			}
 		}
 		//最後にチェーンから連結辺リストを作る 計算量O(nlogn)
 		chains = chains.OrderBy(x => x.leftChain[0].x).ToList();
@@ -40,7 +43,7 @@ public static class SortedEdgeLinkedList
 			if (ProximityCheck(LinkedList.Last(), chains[i].LeftChainLast()))
 				LinkedList.AddRange(chains[i].GetChain(true));
 			else if (ProximityCheck(LinkedList.First(), chains[i].LeftChainLast()))
-				LinkedList.InsertRange(0, chains[i].GetChain(true));
+				LinkedList.InsertRange(0, chains[i].GetChain(false));
 		}
 		return LinkedList;
 	}
@@ -59,6 +62,8 @@ public static class SortedEdgeLinkedList
 		public bool IsChecked = false;
 		public Chains(Vector3 startPoint, Vector3 a, Vector3 b)
 		{
+			leftChain = new List<Vector3>();
+			rightChain = new List<Vector3>();
 			leftChain.Add(startPoint);
 			rightChain.Add(startPoint);
 			leftChain.Add(a);
@@ -88,15 +93,15 @@ public static class SortedEdgeLinkedList
 			IsChecked = true;
 			if (IsLeft)
 			{
-				l.AddRange(leftChain);
-				rightChain.Reverse(1, rightChain.Count - 1);
+				leftChain.Reverse(0, leftChain.Count);
+				l.AddRange(leftChain.GetRange(1, leftChain.Count - 1));
 				l.AddRange(rightChain.GetRange(1, rightChain.Count - 1));
 			}
 			else
 			{
-				l.AddRange(rightChain);
-				leftChain.Reverse(1, leftChain.Count - 1);
-				l.AddRange(leftChain.GetRange(1, leftChain.Count - 1));
+				rightChain.Reverse(0, rightChain.Count);
+				l.AddRange(rightChain.GetRange(1, rightChain.Count - 1));
+				l.AddRange(leftChain.GetRange(1, rightChain.Count - 1));
 			}
 			return l;
 		}

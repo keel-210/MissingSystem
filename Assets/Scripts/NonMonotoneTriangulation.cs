@@ -11,8 +11,7 @@ public static class NonMonotoneTriangulation
 	static List<Vector3> triangles = new List<Vector3>();
 	static List<Vector2Int> EdgeAndHelperIndex = new List<Vector2Int>();
 	static List<Vector2Int> DiagonalIndex = new List<Vector2Int>();
-	static int MaxIndex;
-	static int MinIndex;
+	static int MaxIndex, MinIndex;
 	static bool LeftChain;
 	public static List<List<Vector3>> Monotone(List<Vector3> points)
 	{

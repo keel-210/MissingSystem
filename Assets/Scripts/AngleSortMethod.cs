@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 
-public static class DeformationGraham
+public static class AngleSortMethod
 {
 	//xy平面上の点群が前提(z=0)
 	static List<Vector3> CEL = new List<Vector3>();
