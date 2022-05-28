@@ -21,15 +21,21 @@ public class NonMonotoneTest : MonoBehaviour
 	}
 	public void Monotone()
 	{
+		DiagonalsIndex.Clear();
+		Diagonals.Clear();
 		triangles.Clear();
 		monotones.Clear();
 		if (points.Count >= 3)
 			monotones = NonMonotoneTriangulation.GetMonotones(points);
 		else
 			Debug.Log("Polygon Vertex is less than 3! Check it!");
+		foreach (var v in monotones[0])
+			Debug.Log("m : " + v);
 	}
 	public void Triangulation()
 	{
+		DiagonalsIndex.Clear();
+		Diagonals.Clear();
 		triangles.Clear();
 		monotones.Clear();
 		if (points.Count >= 3)
@@ -63,15 +69,20 @@ public class NonMonotoneTest : MonoBehaviour
 				Gizmos.DrawLine(triangles[i + 2], triangles[i]);
 			}
 
-		Gizmos.color = Color.white;
-		if (monotones.Count > 0)
-			foreach (List<Vector3> ls in monotones)
-				for (int i = 0; i < triangles.Count - 1; i += 2)
-					Gizmos.DrawLine(triangles[i], triangles[i + 1]);
-
 		Gizmos.color = Color.red;
 		if (Diagonals.Count > 0)
 			foreach (List<Vector3> d in Diagonals)
 				Gizmos.DrawLine(d[0], d[1]);
+
+		Gizmos.color = Color.blue;
+		if (monotones.Count > 0)
+			foreach (List<Vector3> ls in monotones)
+				for (int i = 0; i < ls.Count; i++)
+					if (i == ls.Count - 1)
+						Gizmos.DrawLine(ls[i] + Vector3.one * 0.01f, ls[0] + Vector3.one * 0.01f);
+					else
+						Gizmos.DrawLine(ls[i] + Vector3.one * 0.01f, ls[i + 1] + Vector3.one * 0.01f);
+
+
 	}
 }

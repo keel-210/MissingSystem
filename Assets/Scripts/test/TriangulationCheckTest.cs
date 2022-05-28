@@ -17,8 +17,13 @@ public class TriangulationCheckTest : MonoBehaviour
 	{
 		Gizmos.color = Color.white;
 		if (points.Count > 0)
-			foreach (Vector3 p in points)
-				Gizmos.DrawSphere(p, 0.05f);
+		{
+			for (int i = 0; i < points.Count; i++)
+			{
+				Gizmos.DrawSphere(points[i], 0.05f);
+				UnityEditor.Handles.Label(points[i] + new Vector3(0.05f, -0.05f, 0), "v" + i);
+			}
+		}
 
 		if (triangles.Count > 0)
 			for (int i = 0; i < triangles.Count; i += 3)
