@@ -1,6 +1,6 @@
-using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 
 public static class NonMonotoneTriangulation
 {
@@ -13,7 +13,6 @@ public static class NonMonotoneTriangulation
 	static List<Vector2Int> TIndex = new List<Vector2Int>();
 	static List<Vector2Int> DiagonalIndex = new List<Vector2Int>();
 	static int MaxIndex, MinIndex;
-	static bool LeftChain;
 	static List<int> usedPoint = new List<int>();
 	public static List<List<Vector3>> GetMonotones(List<Vector3> points)
 	{
@@ -45,11 +44,8 @@ public static class NonMonotoneTriangulation
 	public static void DrawDiagonal()
 	{
 		sortedList = Points.OrderByDescending(v => v.y).ToList();
-		MaxIndex = Points.IndexOf(sortedList.Last());
-		MinIndex = Points.IndexOf(sortedList.First());
-		int MostLeftPointIndex = Points.IndexOf(Points.OrderBy(v => v.x).First());
-		LeftChain = ((MinIndex < MostLeftPointIndex && MostLeftPointIndex < MaxIndex) || (MaxIndex < MostLeftPointIndex && MostLeftPointIndex < MinIndex));
-
+		MaxIndex = Points.IndexOf(sortedList.First());
+		MinIndex = Points.IndexOf(sortedList.Last());
 		for (int i = 0; i < sortedList.Count; i++)
 		{
 			int TargetIndex = Points.IndexOf(sortedList[i]);
@@ -60,11 +56,21 @@ public static class NonMonotoneTriangulation
 			Debug.Log("Target Vertex : " + TargetIndex + t.ToString() + ", o : " + o + ", a : " + a + ", b : " + b);
 			switch (t)
 			{
-				case VertexType.StartVertex: HandleStartVertex(TargetIndex); break;
-				case VertexType.SplitVertex: HandleSplitVertex(TargetIndex); break;
-				case VertexType.MergeVertex: HandleMergeVertex(TargetIndex); break;
-				case VertexType.RegularVertex: HandleRegularVertex(TargetIndex); break;
-				case VertexType.EndVertex: HandleEndVertex(TargetIndex); break;
+				case VertexType.StartVertex:
+					HandleStartVertex(TargetIndex);
+					break;
+				case VertexType.SplitVertex:
+					HandleSplitVertex(TargetIndex);
+					break;
+				case VertexType.MergeVertex:
+					HandleMergeVertex(TargetIndex);
+					break;
+				case VertexType.RegularVertex:
+					HandleRegularVertex(TargetIndex);
+					break;
+				case VertexType.EndVertex:
+					HandleEndVertex(TargetIndex);
+					break;
 			}
 		}
 	}
@@ -208,6 +214,7 @@ public static class NonMonotoneTriangulation
 	}
 	static void HandleMergeVertex(int index)
 	{
+		Debug.Log("Handle Merge Vertex" + index);
 		Vector2Int v = GetHelperIndex(index - 1);
 		if (GetHelperVertexType(index - 1) == VertexType.MergeVertex)
 			AddDiagonal(index, v.y);
@@ -219,8 +226,10 @@ public static class NonMonotoneTriangulation
 	}
 	static void HandleRegularVertex(int index)
 	{
-		if (IsVertexOnLeftChain(Points[index]))
+		Debug.Log("Handle Regular Vertex" + index);
+		if (IsVertexOnLeftChain(index))
 		{
+			Debug.Log("Regular Left Chain");
 			Vector2Int v = GetHelperIndex(index - 1);
 			if (GetHelperVertexType(index - 1) == VertexType.MergeVertex)
 				AddDiagonal(index, v.y);
@@ -229,6 +238,7 @@ public static class NonMonotoneTriangulation
 		}
 		else
 		{
+			Debug.Log("Regular Right Chain");
 			int j = GetNearestLeftEdgeIndex(index);
 			if (GetHelperVertexType(j) == VertexType.MergeVertex)
 				AddDiagonal(index, GetHelperIndex(j).y);
@@ -237,6 +247,7 @@ public static class NonMonotoneTriangulation
 	}
 	static void HandleSplitVertex(int index)
 	{
+		Debug.Log("Handle Split Vertex" + index);
 		int j = GetNearestLeftEdgeIndex(index);
 		AddDiagonal(index, GetHelperIndex(j).y);
 		ChangeHelper(j, index);
@@ -251,6 +262,7 @@ public static class NonMonotoneTriangulation
 	}
 	static void AddDiagonal(int index0, int index1)
 	{
+		Debug.Log("Add Diagonal :" + index0 + "," + index1);
 		//揃えて追加する
 		if (index0 < index1)
 			DiagonalIndex.Add(new Vector2Int(index0, index1));
@@ -271,9 +283,10 @@ public static class NonMonotoneTriangulation
 	}
 	static Vector2Int GetHelperIndex(int index)
 	{
-		Debug.Log("Request Index : " + index);
+		var loopIndex = index < 0 ? index + Points.Count : index;
+		Debug.Log("Request Index : " + loopIndex + ", Tindex Count" + TIndex.Count);
 		foreach (Vector2Int e in TIndex)
-			if (e.x == index)
+			if (e.x == loopIndex)
 				return e;
 		return Vector2Int.one * -1;
 	}
@@ -296,7 +309,7 @@ public static class NonMonotoneTriangulation
 			edge = e0 - e1;
 			Debug.Log("T search loop : e0" + e0 + " ,e1:" + e1 + " ,v" + v + " ," + TIndex.Count);
 			//注目頂点が辺の左側にある
-			if (Vector3.Cross(v - e1, edge).z > 0)
+			if (Vector3.Cross(v - e1, edge).z >= 0)
 			{
 				if (e1 == v || e0 == v)
 				{
@@ -350,11 +363,18 @@ public static class NonMonotoneTriangulation
 		else
 			return VertexType.RegularVertex;
 	}
-	static bool IsVertexOnLeftChain(Vector3 p)
+	static bool IsVertexOnLeftChain(int p)
 	{
-		int t = Points.IndexOf(p);
-		return LeftChain && ((MinIndex < t && t < MaxIndex) || (MaxIndex < t && t < MinIndex));
+		bool isLeft = false;
+		if (MaxIndex < MinIndex)
+		{
+			isLeft = MaxIndex < p && p < MinIndex;
+		}
+		else
+		{
+			isLeft = (MaxIndex < p && p <= Points.Count) || (p < MinIndex && 0 <= p);
+		}
+		return isLeft;
 	}
 }
-public enum VertexType
-{ StartVertex, SplitVertex, MergeVertex, RegularVertex, EndVertex, }
+public enum VertexType { StartVertex, SplitVertex, MergeVertex, RegularVertex, EndVertex, }
