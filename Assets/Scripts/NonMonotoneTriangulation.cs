@@ -44,11 +44,11 @@ public static class NonMonotoneTriangulation
 	}
 	public static void DrawDiagonal()
 	{
-		sortedList = Points.OrderByDescending(v => v.y).ToList();
+		sortedList = Points.OrderBy(v => v.y).ToList();
 		MaxIndex = Points.IndexOf(sortedList.Last());
 		MinIndex = Points.IndexOf(sortedList.First());
 		int MostLeftPointIndex = Points.IndexOf(Points.OrderBy(v => v.x).First());
-		LeftChain = ((MinIndex < MostLeftPointIndex && MostLeftPointIndex < MaxIndex) || (MaxIndex < MostLeftPointIndex && MostLeftPointIndex < MinIndex));
+		LeftChain = (MaxIndex < MostLeftPointIndex && MostLeftPointIndex < MinIndex + Points.Count - 1);
 
 		for (int i = 0; i < sortedList.Count; i++)
 		{
@@ -204,12 +204,13 @@ public static class NonMonotoneTriangulation
 	//ここから先の5種類の頂点ごとの処理は割と共通部分が多いから後で整理
 	static void HandleStartVertex(int index)
 	{
-		AddEdge(index, index);
+		AddHelper(index, index);
 	}
 	static void HandleMergeVertex(int index)
 	{
-		Vector2Int v = GetHelperIndex(index - 1);
-		if (GetHelperVertexType(index - 1) == VertexType.MergeVertex)
+		var targetIndex = index - 1 > 0 ? index - 1 : index - 1 + Points.Count;
+		Vector2Int v = GetHelperIndex(targetIndex);
+		if (GetHelperVertexType(targetIndex) == VertexType.MergeVertex)
 			AddDiagonal(index, v.y);
 		TIndex.Remove(v);
 		int j = GetNearestLeftEdgeIndex(index);
@@ -219,13 +220,15 @@ public static class NonMonotoneTriangulation
 	}
 	static void HandleRegularVertex(int index)
 	{
+		// ここの判定おかしい凹型ポリゴンで機能しない
+		// 通常点であれば周り方向とひとつ前と後を見て上下どちらに流れているか見るだけでいいのでは
 		if (IsVertexOnLeftChain(Points[index]))
 		{
 			Vector2Int v = GetHelperIndex(index - 1);
 			if (GetHelperVertexType(index - 1) == VertexType.MergeVertex)
 				AddDiagonal(index, v.y);
 			TIndex.Remove(v);
-			AddEdge(index, index);
+			AddHelper(index, index);
 		}
 		else
 		{
@@ -240,12 +243,13 @@ public static class NonMonotoneTriangulation
 		int j = GetNearestLeftEdgeIndex(index);
 		AddDiagonal(index, GetHelperIndex(j).y);
 		ChangeHelper(j, index);
-		AddEdge(index, index);
+		AddHelper(index, index);
 	}
 	static void HandleEndVertex(int index)
 	{
-		Vector2Int v = GetHelperIndex(index - 1);
-		if (GetHelperVertexType(index - 1) == VertexType.MergeVertex)
+		var targetIndex = index - 1 > 0 ? index - 1 : index - 1 + Points.Count;
+		Vector2Int v = GetHelperIndex(targetIndex);
+		if (GetHelperVertexType(targetIndex) == VertexType.MergeVertex)
 			AddDiagonal(index, v.y);
 		TIndex.Remove(v);
 	}
@@ -257,7 +261,7 @@ public static class NonMonotoneTriangulation
 		else
 			DiagonalIndex.Add(new Vector2Int(index1, index0));
 	}
-	static void AddEdge(int index, int helperIndex)
+	static void AddHelper(int index, int helperIndex)
 	{
 		Debug.Log("Add Helper" + new Vector2Int(index, helperIndex));
 		TIndex.Add(new Vector2Int(index, helperIndex));
@@ -271,7 +275,7 @@ public static class NonMonotoneTriangulation
 	}
 	static Vector2Int GetHelperIndex(int index)
 	{
-		Debug.Log("Request Index : " + index);
+		Debug.Log("Request Index : " + index + ", Count" + TIndex.Count + ", TIndex0" + TIndex[0]);
 		foreach (Vector2Int e in TIndex)
 			if (e.x == index)
 				return e;
@@ -296,7 +300,7 @@ public static class NonMonotoneTriangulation
 			edge = e0 - e1;
 			Debug.Log("T search loop : e0" + e0 + " ,e1:" + e1 + " ,v" + v + " ," + TIndex.Count);
 			//注目頂点が辺の左側にある
-			if (Vector3.Cross(v - e1, edge).z > 0)
+			if (Vector3.Cross(v - e1, edge).z >= 0)
 			{
 				if (e1 == v || e0 == v)
 				{
@@ -331,8 +335,8 @@ public static class NonMonotoneTriangulation
 	}
 	static VertexType GetVertexType(Vector3 a, Vector3 o, Vector3 b)
 	{
-		bool IsNextPointUnderTargetPoint = o.y > a.y;
-		bool IsPrevPointUnderTargetPoint = o.y > b.y;
+		bool IsNextPointUnderTargetPoint = o.y < a.y;
+		bool IsPrevPointUnderTargetPoint = o.y < b.y;
 		//ここあとで調整 辺連結頂点リストの回り方によって内角の最小方向は変化する ここでは反時計回りなら内角
 		float InternalAngle = Vector3.Cross(a - o, b - o).z < 0 ? Vector3.Angle(a - o, b - o) : 360 - Vector3.Angle(a - o, b - o);
 		Debug.Log("o : " + o + ", a : " + a + ", b : " + b + "InternalAngle :" + InternalAngle);
@@ -353,7 +357,8 @@ public static class NonMonotoneTriangulation
 	static bool IsVertexOnLeftChain(Vector3 p)
 	{
 		int t = Points.IndexOf(p);
-		return LeftChain && ((MinIndex < t && t < MaxIndex) || (MaxIndex < t && t < MinIndex));
+		Debug.Log("LeftChain " + (MaxIndex < t && t < MinIndex + Points.Count - 1) + " , target" + t + "Max:" + MaxIndex);
+		return LeftChain & (MaxIndex < t && t < MinIndex + Points.Count - 1);
 	}
 }
 public enum VertexType
